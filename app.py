@@ -2,10 +2,11 @@ import streamlit as st
 import pandas as pd
 
 st.set_page_config(
-    page_title="EduRisk Analytics - Lab 03",
+    page_title="EduRisk Analytics - Lab 04",
     page_icon="🎓",
     layout="wide"
 )
+
 
 def load_student_data():
     try:
@@ -17,85 +18,8 @@ def load_student_data():
         )
         st.stop()
 
-#laod the student data
+
 student_df = load_student_data()
-
-#added custom css
-
-st.markdown("""
-<style>
-.stApp { background-color: #0E1A2B; }
-.block-container { padding-top: 2.5rem; max-width: 1200px; }
-
-h1, h2, h3 { color: #FFFFFF !important; }
-.stApp p, .stApp label, .stApp span { color: #E8EEF7; }
-
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background-color: #091321;
-    border-right: 1px solid #26406B;
-}
- /* DESIGN: white sidebar title with a teal underline */
-    section[data-testid="stSidebar"] h1 {
-        color: #FFFFFF;
-        border-bottom: 2px solid #1E7A5F;
-        padding-bottom: 6px;
-    }
-
-section[data-testid="stSidebar"] * { color: #E8EEF7 !important; }
-
-/* Metric boxes */
-div[data-testid="stMetric"] {
-    background-color: #162640;
-    border: 1px solid #26406B;
-    border-top: 4px solid #2EC4B6;
-    border-radius: 12px;
-    padding: 16px 20px;
-}
-div[data-testid="stMetricLabel"] * { color: #9FB0C7 !important; }
-div[data-testid="stMetricValue"] * { color: #FFFFFF !important; }
-
-/* Form box */
-div[data-testid="stForm"] {
-    background-color: #162640;
-    border: 1px solid #26406B;
-    border-radius: 12px;
-    padding: 1rem;
-}
-
-/* Buttons */
-.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
-    background-color: #2EC4B6;
-    color: #04201D !important;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-}
-.stButton > button:hover, .stDownloadButton > button:hover, .stFormSubmitButton > button:hover {
-    background-color: #5FE0D4;
-}
-
-/* Table */
-div[data-testid="stDataFrame"] {
-    border: 1px solid #26406B;
-    border-radius: 10px;
-}
-    /* DESIGN: navy download button, different from the teal action buttons */
-    .stDownloadButton button {
-        background-color: #0F2238;
-        color: #FFFFFF;
-        border: 1px solid #0F2238;
-    }
- /* DESIGN: rounded message boxes (success / info / warning / error) */
-    [data-testid="stAlert"] {
-        border-radius: 8px;
-    }
-
-
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-</style>
-""", unsafe_allow_html=True)
 
 
 
@@ -107,7 +31,6 @@ def get_risk_level(score, attendance):
     else:
         return "Low Risk"
 
-#add the risk level column
 
 student_df["Risk Level"] = student_df.apply(
     lambda row: get_risk_level(
@@ -117,29 +40,9 @@ student_df["Risk Level"] = student_df.apply(
     axis=1
 )
 
-# ------------------------------------------------------------
-# 6. DESIGN: RISK LEVEL COLOURS
-# green = Low, yellow = Medium, red = High
-# ------------------------------------------------------------
-risk_colors = {
-    "Low Risk": "background-color: #DCFCE7; color: #166534",
-    "Medium Risk": "background-color: #FEF3C7; color: #92400E",
-    "High Risk": "background-color: #FEE2E2; color: #991B1B"
-}
+if "risk_history" not in st.session_state:
+    st.session_state["risk_history"] = []
 
-# DESIGN: paint only the "Risk Level" column of a table
-def color_risk(df):
-    return df.style.map(
-        lambda value: risk_colors.get(value, ""),
-        subset=["Risk Level"]
-    )
-
-total_students = len(student_df)
-average_score = student_df["Score"].mean()
-average_attendance = student_df["Attendance"].mean()
-low_score_students = student_df[student_df["Score"] < 60].shape[0]
-
-#sidebar menu
 with st.sidebar:
     st.title("EduRisk Menu")
     selected_page = st.radio(
@@ -147,19 +50,16 @@ with st.sidebar:
         ["Home", "Dashboard", "Student Data", "Risk Checker", "About"]
     )
 
-
-#Home Page
 if selected_page == "Home":
     st.title("🎓 EduRisk Analytics")
-    st.subheader("Frontend Prototype with CSV Data Loading")
-    st.write("Welcome to Lab 03.")
+    st.subheader("Reliable Risk Checker with Forms and Session State")
+    st.write("Welcome to Lab 04.")
     st.write(
-        "In this lab, the app loads student data from students.csv "
-        "using Pandas instead of storing data directly inside app.py."
+        "In this lab, the app improves the Risk Checker page using "
+        "Streamlit forms, input validation, and session state."
     )
-    st.success("Lab 03 app is running successfully!")
-    
-#Dashboard Page
+    st.success("Lab 04 app is running successfully!")
+
 elif selected_page == "Dashboard":
     st.title("Dashboard Prototype")
 
@@ -209,13 +109,11 @@ elif selected_page == "Dashboard":
         course_count = student_df["Course"].value_counts()
         st.bar_chart(course_count)
 
-        st.info(
+    st.info(
         "Ethics Reminder: Academic monitoring should support students, "
         "not label or punish them."
     )
 
-
-#Update the Student Data page to show the full dataset with risk levels.
 elif selected_page == "Student Data":
     st.title("Student Data")
 
@@ -236,50 +134,90 @@ elif selected_page == "Student Data":
     st.subheader("Full Student Dataset")
     st.dataframe(student_df)
 
-#Create a page where users can enter one student's score and attendance to check risk level.
 elif selected_page == "Risk Checker":
     st.title("Single Student Risk Checker")
 
     st.write(
-        "Use this page to check the risk level of one student based on" \
-        "score and attendance."
+        "Enter student information to check risk level. "
+        "The result is based on score and attendance."
+    )
+
+    st.info(
+        "This tool is for academic support. Risk results should help students, "
+        "not label or punish them."
     )
 
     with st.form("risk_checker_form"):
         input_name = st.text_input("Student Name")
         input_score = st.number_input("Score", 0, 100, 50)
         input_attendance = st.number_input("Attendance", 0, 100, 50)
+
         submitted = st.form_submit_button("Check Risk")
 
     if submitted:
-        risk_result = get_risk_level(input_score, input_attendance)
-
-        st.write("Student Name:", input_name)
-        st.write("Score:", input_score)
-        st.write("Attendance:", input_attendance)
-
-        if risk_result == "Low Risk":
-            st.success("Risk Level: Low Risk")
-        elif risk_result == "Medium Risk":
-            st.warning("Risk Level: Medium Risk")
+        if input_name.strip() == "":
+            st.warning("Please enter the student name.")
         else:
-            st.error("Risk Level: High Risk")
+            risk_result = get_risk_level(
+                input_score,
+                input_attendance
+            )
 
-#Update the About page with Lab 02 information and an ethics reminder.
+            result = {
+                "Student Name": input_name.strip(),
+                "Score": input_score,
+                "Attendance": input_attendance,
+                "Risk Level": risk_result
+            }
+
+            st.session_state["risk_history"].append(result)
+
+            if risk_result == "Low Risk":
+                st.success("Risk Level: Low Risk")
+                st.write("Student appears on track.")
+            elif risk_result == "Medium Risk":
+                st.warning("Risk Level: Medium Risk")
+                st.write("Monitor progress and provide guidance.")
+            else:
+                st.error("Risk Level: High Risk")
+                st.write("Student may need additional support.")
+
+            st.write("Student Name:", input_name.strip())
+            st.write("Score:", input_score)
+            st.write("Attendance:", input_attendance)
+
+    st.subheader("Recent Risk Checks")
+
+    if len(st.session_state["risk_history"]) > 0:
+        history_df = pd.DataFrame(
+            st.session_state["risk_history"]
+        )
+
+        st.dataframe(history_df)
+
+        if st.button("Clear History"):
+            st.session_state["risk_history"] = []
+            st.success("Risk check history cleared.")
+    else:
+        st.info("No risk checks yet.")
+
+    st.warning(
+        "Ethics Reminder: Risk results should be used as guidance for support, "
+        "not as final judgment about a student."
+    )
 
 else:
     st.title("About")
 
-    st.write("This app is part of Lab 03.")
+    st.write("This app is part of Lab 04.")
     st.write("Course: Web App Development for Data Science")
     st.write("Project Theme: EduRisk Analytics")
-    st.write("Topic: Data Loading, Layout, and Frontend Prototype")
+    st.write("Topic: Forms, Validation, and Session State")
 
     st.info(
-        "This frontend prototype loads real data from students.csv "
-        "and displays it using Streamlit and Pandas."
+        "This version improves the Risk Checker page using Streamlit forms, "
+        "input validation, and session state."
     )
-
 
     st.warning(
         "Ethics Reminder: Student risk information should be used responsibly "
